@@ -1,3 +1,13 @@
+# Add any directories, files, or patterns you don't want to be tracked by version control
+.iddqd1993
+p
+s
+*.mp3
+*.mp4
+*.mkv
+*.ogg
+*.7z
+
 # Logs
 logs
 *.log

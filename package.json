@@ -1,0 +1,32 @@
+{
+  "name": "corona.virusmap.cz",
+  "version": "1.0.0",
+  "description": "Coronavirus (COVID-19) global stats over time. JSON data.",
+  "main": "covid.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/marko-36/corona.virusmap.cz.git"
+  },
+  "keywords": [
+    "covid",
+    "covid-19",
+    "coronavirus",
+    "stats",
+    "statistics",
+    "map",
+    "per-capita"
+  ],
+  "author": "marko-36",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/marko-36/corona.virusmap.cz/issues"
+  },
+  "homepage": "https://github.com/marko-36/corona.virusmap.cz#readme",
+  "dependencies": {
+    "cheerio": "^1.0.0-rc.3",
+    "puppeteer": "^2.1.1"
+  }
+}
