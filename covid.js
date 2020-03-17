@@ -4,6 +4,20 @@ const fs = require('fs');
 const $ = require('cheerio');
 const puppeteer = require('puppeteer');
 
+
+var applog = {};
+applog.message = ('\n'+ new Date() + '\u0009'+ new Date().getMilliseconds() +'\u0009--Beginning of log--');
+applog.messageCount = 0;
+
+function log(message, filename){
+  applog.messages += ('\n'+ new Date() + '\u0009'+ new Date().getMilliseconds() +'\u0009' + message);
+  applog.messageCount = ++applog.messageCount;  
+  //console.log(applog.messages);
+  if (filename) {
+    fs.writeFileSync(filename, 'Lines: '+ applog.messageCount + applog.messages , function(){})
+  }
+}
+
 async function getLiveURL(url){
   const browser = await puppeteer.launch();
   const page = await browser.newPage();
@@ -13,7 +27,7 @@ async function getLiveURL(url){
   return html
 };     
 
-async function covid(deleteWhen) {
+async function covid(logFn,deleteWhen) {
   const now = new Date()
   const data = JSON.parse(fs.readFileSync('_data.json', 'utf8'));
   const freshDataHTML = await getLiveURL(privateDataSources.src01.url);  
@@ -28,7 +42,7 @@ async function covid(deleteWhen) {
       currentRow = $(this);
       country = localNames[$(dataSelectors.countryName,currentRow).text().trim()]
       if (country == undefined) {
-        //log the error
+        log($(dataSelectors.countryName,currentRow).text().trim() + 'not matched')
       } else {
         data[country].data[now] = {}      
         freshData = data[country].data[now]
@@ -41,7 +55,8 @@ async function covid(deleteWhen) {
         if (freshData.recovered == "") {freshData.recovered = 0}
       }
     })
+    logFn('EOF','covid.log')
   }
-  fs.writeFile('_data.json', JSON.stringify(data), function(){})       
+  fs.writeFile('_data.json', JSON.stringify(data), function(){console.log('done!')})       
 }
-covid()
+covid(log)
