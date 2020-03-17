@@ -249,24 +249,33 @@ const dataSources = {
     }
 }
 
+async function getLiveURL(url) {
+    const browser = await puppeteer.launch();
+    const page = await browser.newPage();
+    await page.goto(url);
+    html = await page.content();
+    browser.close();
+    return html
+};
+
 async function covid() {
     const now = new Date()
     const data = JSON.parse(fs.readFileSync('_data.json', 'utf8'));
-    const updateDataHTML = fs.readFileSync('_test.json', 'utf8');
+    const freshDataHTML = await getLiveURL(dataSources.src01.url);
     const dataSelectors = dataSources.whorg.selectors;
 
-    $(dataSelectors.rows, updateDataHTML).each(function () {
+    $(dataSelectors.rows, freshDataHTML).each(function () {
         currentRow = $(this);
         country = localNames[$(dataSelectors.countryName, currentRow).text().trim()]
         data[country].data[now] = {}
-        updateData = data[country].data[now]
-        updateData.when = new Date().getTime()
-        updateData.cases = $(dataSelectors.cases, currentRow).text().trim()
-        updateData.deceased = $(dataSelectors.deceased, currentRow).text().trim()
-        updateData.recovered = $(dataSelectors.recovered, currentRow).text().trim()
-        if (updateData.cases == "") {updateData.cases = 0}
-        if (updateData.deceased == "") {updateData.deceased = 0}
-        if (updateData.recovered == "") {updateData.recovered = 0}
+        freshData = data[country].data[now]
+        freshData.when = new Date().getTime()
+        freshData.cases = $(dataSelectors.cases, currentRow).text().trim()
+        freshData.deceased = $(dataSelectors.deceased, currentRow).text().trim()
+        freshData.recovered = $(dataSelectors.recovered, currentRow).text().trim()
+        if (freshData.cases == "") {freshData.cases = 0}
+        if (freshData.deceased == "") {freshData.deceased = 0}
+        if (freshData.recovered == "") {freshData.recovered = 0}
     })
     fs.writeFile('_data.json', JSON.stringify(data), function () {})
 }

@@ -8,6 +8,8 @@ s
 *.ogg
 *.7z
 
+_data.json
+
 # Logs
 logs
 *.log
