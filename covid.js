@@ -1,4 +1,5 @@
 const {localNames, dataSources} = require('./config');
+const privateDataSources = require('./.iddqd1993/config_private');
 const fs = require('fs');
 const $ = require('cheerio');
 const puppeteer = require('puppeteer');
@@ -15,8 +16,8 @@ async function getLiveURL(url){
 async function covid(deleteWhen) {
   const now = new Date()
   const data = JSON.parse(fs.readFileSync('_data.json', 'utf8'));
-  const freshDataHTML = await getLiveURL(dataSources.src01.url);  
-  const dataSelectors = dataSources.whorg.selectors;    
+  const freshDataHTML = await getLiveURL(privateDataSources.src01.url);  
+  const dataSelectors = privateDataSources.src01.selectors;    
 
   if (deleteWhen){
     for (let country of Object.keys(data)){
