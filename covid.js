@@ -27,67 +27,102 @@ async function getLiveURL(url){
   return html
 };
 
-function recountData(){  // move to front-end
-  const data = JSON.parse(fs.readFileSync('_data.json', 'utf8'));
-  for (let country of Object.keys(data)){
-    for (let dataChunk of Object.keys(data[country].data)){
-      dataPoint = data[country].data[dataChunk]
-      dataPoint.p_cases = dataPoint.cases / data[country].pop
-      dataPoint.p_dec = dataPoint.deceased / data[country].pop
-      dataPoint.p_rec = dataPoint.recovered / data[country].pop
-      dataPoint.a_cases = dataPoint.cases / data[country].area
-      dataPoint.a_dec = dataPoint.deceased / data[country].area
-      dataPoint.a_rec = dataPoint.recovered / data[country].area
+function recountData(srcData){  // add to-area and per-capita; move to front-end
+  for (let country of Object.keys(srcData)){
+    for (let dataChunk of Object.keys(srcData[country].data)){
+      dataPoint = srcData[country].data[dataChunk]
+      dataPoint.p_cases = dataPoint.cases / srcData[country].pop
+      dataPoint.p_dec = dataPoint.deceased / srcData[country].pop
+      dataPoint.p_rec = dataPoint.recovered / srcData[country].pop
+      dataPoint.a_cases = dataPoint.cases / srcData[country].area
+      dataPoint.a_dec = dataPoint.deceased / srcData[country].area
+      dataPoint.a_rec = dataPoint.recovered / srcData[country].area
     }
   }
-  fs.writeFile('_data.json', JSON.stringify(data), function(){console.log('recountData() done!')})     
+  return srcData
 }
-async function deleteWhen(when) {
+
+function deleteWhen(when) {
   const data = JSON.parse(fs.readFileSync('_data.json', 'utf8'));
-  //const freshDataHTML = await getLiveURL(privateDataSources.src01.url);  
   for (let country of Object.keys(data)) {delete data[country].data[when]}
   fs.writeFile('_data.json', JSON.stringify(data), function () {console.log('deleteWhen done!')})
 }
 
-function data2graph(data){  // regroups data for use in graphs; move to front-end
+function data2graph(srcData) { // regroups data for use in graphs; move to front-end
+  var gdata = {}
+  gdata.datasets = []
+  gdata.datasets.push({})
+  gdata.datasets.push({})
+  gdata.datasets.push({})
+  gdata.datasets[0].label = "'Cases'"
+  gdata.datasets[1].label = "'Deceased'"
+  gdata.datasets[2].label = "'Recovered'"
+  let cases = gdata.datasets[0].data = []
+  let deceased = gdata.datasets[1].data = []
+  let recovered = gdata.datasets[2].data = []
 
+  for (let dataChunk of Object.keys(srcData)) {
+    let c = {}
+    let d = {}
+    let r = {}
+    c.x = "new Date('" + dataChunk + "')"
+    d.x = c.x
+    r.x = c.x
+    c.y = srcData[dataChunk].cases
+    d.y = srcData[dataChunk].deceased
+    r.y = srcData[dataChunk].recovered
+    cases.push(c)
+    deceased.push(d)
+    recovered.push(r)
+  }
+  
+  gdata = JSON.stringify(gdata).replace(/"/g,"").replace(/'/g,"\"")
+  console.log(gdata)
+  console.log('data2graph done!')
 }
 
-async function covid(logFn,deleteWhen) {
+async function covid(logFn) {
   const now = new Date()
   const data = JSON.parse(fs.readFileSync('_data.json', 'utf8'));
-  //const freshDataHTML = await getLiveURL(privateDataSources.src01.url);  
-  const freshDataHTML = fs.readFileSync('_src.json', 'utf8')   
-  const dataSelectors = privateDataSources.src01.selectors;    
+  const freshDataHTML = await getLiveURL(privateDataSources.src01.url);
+  //const freshDataHTML = fs.readFileSync('_src.html', 'utf8')   
+  const dataSelectors = privateDataSources.src01.selectors;
 
-  if (deleteWhen){
-    for (let country of Object.keys(data)){
-      delete data[country].data[deleteWhen]
+  $(dataSelectors.rows, freshDataHTML).each(function () {
+    currentRow = $(this);
+    country = localNames[$(dataSelectors.countryName, currentRow).text().trim()]
+    if (country == undefined) {
+      log($(dataSelectors.countryName, currentRow).text().trim() + 'not matched')
+    } else {
+      data[country].data[now] = {}
+      freshData = data[country].data[now]
+      freshData.when = now.getTime()
+      freshData.cases = parseInt($(dataSelectors.cases, currentRow).text().trim().replace(",", ""))
+      freshData.deceased = parseInt($(dataSelectors.deceased, currentRow).text().trim().replace(",", ""))
+      freshData.recovered = parseInt($(dataSelectors.recovered, currentRow).text().trim().replace(",", ""))
+      if (isNaN(freshData.cases)) {freshData.cases = 0}
+      if (isNaN(freshData.deceased)) {freshData.deceased = 0}
+      if (isNaN(freshData.recovered)) {freshData.recovered = 0}
     }
-  } else {
-    $(dataSelectors.rows, freshDataHTML).each(function() {
-      currentRow = $(this);
-      country = localNames[$(dataSelectors.countryName,currentRow).text().trim()]
-      if (country == undefined) {
-        log($(dataSelectors.countryName,currentRow).text().trim() + 'not matched')
-      } else {
-        data[country].data[now] = {}      
-        freshData = data[country].data[now]
-        freshData.when = now.getTime()
-        freshData.cases = parseInt($(dataSelectors.cases, currentRow).text().trim().replace(",", ""))
-        freshData.deceased = parseInt($(dataSelectors.deceased, currentRow).text().trim().replace(",", ""))
-        freshData.recovered =  parseInt($(dataSelectors.recovered, currentRow).text().trim().replace(",", ""))
-        if (isNaN(freshData.cases)) {freshData.cases = 0}
-        if (isNaN(freshData.deceased)) {freshData.deceased = 0}
-        if (isNaN(freshData.recovered)) {freshData.recovered = 0}
-      }
-    })
-    logFn('EOF','covid.log')
-  }
-  fs.writeFile('_data.json', JSON.stringify(data), function(){console.log('_data.json updated!')})       
+  })
+  logFn('EOF', 'covid.log')
+
+  fs.writeFile('_data.json', JSON.stringify(data), function () {
+    console.log('_data.json updated!')
+  })
 }
 
+/*
+var srcData = JSON.parse(fs.readFileSync('_data.json', 'utf8'));
+srcData = srcData['United States'].data 
+data2graph(srcData)
+*/
 
-//recountData()
+
+var srcData = JSON.parse(fs.readFileSync('_data.json', 'utf8'));
+recountData(srcData)
+/**/
+
 //deleteWhen()
-covid(log)
+
+//covid(log)
