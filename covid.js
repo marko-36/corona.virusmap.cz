@@ -40,7 +40,13 @@ function recountData(){  // move to front-end
       dataPoint.a_rec = dataPoint.recovered / data[country].area
     }
   }
-  fs.writeFile('_data.json', JSON.stringify(data), function(){console.log('recountData done!')})     
+  fs.writeFile('_data.json', JSON.stringify(data), function(){console.log('recountData() done!')})     
+}
+async function deleteWhen(when) {
+  const data = JSON.parse(fs.readFileSync('_data.json', 'utf8'));
+  //const freshDataHTML = await getLiveURL(privateDataSources.src01.url);  
+  for (let country of Object.keys(data)) {delete data[country].data[when]}
+  fs.writeFile('_data.json', JSON.stringify(data), function () {console.log('deleteWhen done!')})
 }
 
 function data2graph(data){  // regroups data for use in graphs; move to front-end
@@ -78,8 +84,10 @@ async function covid(logFn,deleteWhen) {
     })
     logFn('EOF','covid.log')
   }
-  fs.writeFile('_data.json', JSON.stringify(data), function(){console.log('done!')})       
+  fs.writeFile('_data.json', JSON.stringify(data), function(){console.log('_data.json updated!')})       
 }
 
-//covid(log)
-recountData()
+
+//recountData()
+//deleteWhen()
+covid(log)
