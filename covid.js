@@ -42,51 +42,31 @@ function recountData(srcData){  // add to-area and per-capita; move to front-end
   return srcData
 }
 
+function splitData(srcData) {
+  let countryList = {}
+  let countryCount = 0
+  for (let country of Object.keys(srcData)) {
+    let countryShortName = country.replace(/ /g,"_").replace(/\./g,"_").toLowerCase()
+    fs.writeFileSync('./_country/' + countryShortName + '.json', JSON.stringify(srcData[country]), function () {})
+    countryList[country] = countryShortName;
+    ++countryCount
+  }
+  fs.writeFileSync('_countrylist.json', JSON.stringify(countryList), function () {console.log('splitData() done! Countrycount: ' +countryCount)})  
+}
+
 function deleteWhen(when) {
   const data = JSON.parse(fs.readFileSync('_data.json', 'utf8'));
   for (let country of Object.keys(data)) {delete data[country].data[when]}
-  fs.writeFile('_data.json', JSON.stringify(data), function () {console.log('deleteWhen done!')})
-}
-
-function data2graph(srcData) { // regroups data for use in graphs; move to front-end
-  var gdata = {}
-  gdata.datasets = []
-  gdata.datasets.push({})
-  gdata.datasets.push({})
-  gdata.datasets.push({})
-  gdata.datasets[0].label = "'Cases'"
-  gdata.datasets[1].label = "'Deceased'"
-  gdata.datasets[2].label = "'Recovered'"
-  let cases = gdata.datasets[0].data = []
-  let deceased = gdata.datasets[1].data = []
-  let recovered = gdata.datasets[2].data = []
-
-  for (let dataChunk of Object.keys(srcData)) {
-    let c = {}
-    let d = {}
-    let r = {}
-    c.x = "new Date('" + dataChunk + "')"
-    d.x = c.x
-    r.x = c.x
-    c.y = srcData[dataChunk].cases
-    d.y = srcData[dataChunk].deceased
-    r.y = srcData[dataChunk].recovered
-    cases.push(c)
-    deceased.push(d)
-    recovered.push(r)
-  }
-  
-  gdata = JSON.stringify(gdata).replace(/"/g,"").replace(/'/g,"\"")
-  console.log(gdata)
-  console.log('data2graph done!')
+  fs.writeFile('_data.json', JSON.stringify(data), function () {console.log('deleteWhen() done!')})
 }
 
 async function covid(logFn) {
   const now = new Date()
-  const data = JSON.parse(fs.readFileSync('_data.json', 'utf8'));
+  var data = JSON.parse(fs.readFileSync('_data.json', 'utf8'));
   const freshDataHTML = await getLiveURL(privateDataSources.src01.url);
   //const freshDataHTML = fs.readFileSync('_src.html', 'utf8')   
   const dataSelectors = privateDataSources.src01.selectors;
+  var countryCount = 0
 
   $(dataSelectors.rows, freshDataHTML).each(function () {
     currentRow = $(this);
@@ -103,13 +83,16 @@ async function covid(logFn) {
       if (isNaN(freshData.cases)) {freshData.cases = 0}
       if (isNaN(freshData.deceased)) {freshData.deceased = 0}
       if (isNaN(freshData.recovered)) {freshData.recovered = 0}
+      ++countryCount
     }
   })
+  logFn(countryCount)  
   logFn('EOF', 'covid.log')
-
   fs.writeFile('_data.json', JSON.stringify(data), function () {
-    console.log('_data.json updated!')
+    console.log('_data.json updated! Countrycount: ' +countryCount)
+    splitData(data);
   })
+
 }
 
 /*
@@ -118,11 +101,16 @@ srcData = srcData['United States'].data
 data2graph(srcData)
 */
 
-
+/*
 var srcData = JSON.parse(fs.readFileSync('_data.json', 'utf8'));
 recountData(srcData)
-/**/
+*/
+
+/*
+var srcData = JSON.parse(fs.readFileSync('_data.json', 'utf8'));
+splitData(srcData)
+ */
 
 //deleteWhen()
 
-//covid(log)
+covid(log)
