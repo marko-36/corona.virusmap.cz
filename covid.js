@@ -27,28 +27,14 @@ async function getLiveURL(url){
   return html
 };
 
-function recountData(srcData){  // add to-area and per-capita; move to front-end
-  for (let country of Object.keys(srcData)){
-    for (let dataChunk of Object.keys(srcData[country].data)){
-      dataPoint = srcData[country].data[dataChunk]
-      dataPoint.p_cases = dataPoint.cases / srcData[country].pop
-      dataPoint.p_dec = dataPoint.deceased / srcData[country].pop
-      dataPoint.p_rec = dataPoint.recovered / srcData[country].pop
-      dataPoint.a_cases = dataPoint.cases / srcData[country].area
-      dataPoint.a_dec = dataPoint.deceased / srcData[country].area
-      dataPoint.a_rec = dataPoint.recovered / srcData[country].area
-    }
-  }
-  return srcData
-}
-
 function splitData(srcData) {
   let countryList = {}
   let countryCount = 0
   for (let country of Object.keys(srcData)) {
     let countryShortName = country.replace(/ /g,"_").replace(/\./g,"_").toLowerCase()
+    let cases = srcData[country].cases
     fs.writeFileSync('./_country/' + countryShortName + '.json', JSON.stringify(srcData[country]), function () {})
-    countryList[country] = countryShortName;
+    countryList[country+' ('+ cases +')'] = countryShortName;
     ++countryCount
   }
   fs.writeFileSync('_countrylist.json', JSON.stringify(countryList), function () {console.log('splitData() done! Countrycount: ' +countryCount)})  
@@ -80,6 +66,7 @@ async function covid(logFn) {
       freshData.cases = parseInt($(dataSelectors.cases, currentRow).text().trim().replace(",", ""))
       freshData.deceased = parseInt($(dataSelectors.deceased, currentRow).text().trim().replace(",", ""))
       freshData.recovered = parseInt($(dataSelectors.recovered, currentRow).text().trim().replace(",", ""))
+      data[country].cases = freshData.cases
       if (isNaN(freshData.cases)) {freshData.cases = 0}
       if (isNaN(freshData.deceased)) {freshData.deceased = 0}
       if (isNaN(freshData.recovered)) {freshData.recovered = 0}
@@ -111,6 +98,6 @@ var srcData = JSON.parse(fs.readFileSync('_data.json', 'utf8'));
 splitData(srcData)
  */
 
-//deleteWhen()
+//deleteWhen('Thu Mar 19 2020 11:54:28 GMT+0100 (GMT+01:00)')
 
 covid(log)
