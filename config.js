@@ -238,8 +238,8 @@ const dataSources = {
             rows: "",
             countryName: "",
             cases: "",
-            deceased: "",
-            recovered: ""
+            dec: "",
+            rec: ""
         },
         url: "https://www.who.int/emergencies/diseases/novel-coronavirus-2019/situation-reports/"
     }

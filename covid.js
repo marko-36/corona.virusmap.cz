@@ -27,17 +27,17 @@ async function getLiveURL(url){
   return html
 };
 
-function splitData(srcData) {
+function splitData(srcData) {//split data.json to country files
   let countryList = {}
   let countryCount = 0
   for (let country of Object.keys(srcData)) {
     let countryShortName = country.replace(/ /g,"_").replace(/\./g,"_").toLowerCase()
     let cases = srcData[country].cases
-    fs.writeFileSync('./_country/' + countryShortName + '.json', JSON.stringify(srcData[country]), function () {})
+    fs.writeFileSync('./_data/' + countryShortName + '.json', JSON.stringify(srcData[country]), function () {})
     countryList[country+' ('+ cases +')'] = countryShortName;
     ++countryCount
   }
-  fs.writeFileSync('_countrylist.json', JSON.stringify(countryList), function () {console.log('splitData() done! Countrycount: ' +countryCount)})  
+  fs.writeFileSync('./_data/_countrylist.json', JSON.stringify(countryList), function () {console.log('splitData() done! Countrycount: ' +countryCount)})  
 }
 
 function deleteWhen(when) {
@@ -49,8 +49,11 @@ function deleteWhen(when) {
 async function covid(logFn) {
   const now = new Date()
   var data = JSON.parse(fs.readFileSync('_data.json', 'utf8'));
+  var dataLatest = {} 
+  var dataTop10 = {}   
+  var lastDayCases   
   const freshDataHTML = await getLiveURL(privateDataSources.src01.url);
-  //const freshDataHTML = fs.readFileSync('_src.html', 'utf8')   
+ 
   const dataSelectors = privateDataSources.src01.selectors;
   var countryCount = 0
 
@@ -60,27 +63,48 @@ async function covid(logFn) {
     if (country == undefined) {
       log($(dataSelectors.countryName, currentRow).text().trim() + 'not matched')
     } else {
-      data[country].data[now] = {}
-      freshData = data[country].data[now]
-      freshData.when = now.getTime()
+      for (let lastDay of Object.keys(data[country].data)){
+        lastDayCases = data[country].data[lastDay].cases
+      }
+      data[country].data[now] = {}     
+      let freshData = data[country].data[now]
       freshData.cases = parseInt($(dataSelectors.cases, currentRow).text().trim().replace(",", ""))
-      freshData.deceased = parseInt($(dataSelectors.deceased, currentRow).text().trim().replace(",", ""))
-      freshData.recovered = parseInt($(dataSelectors.recovered, currentRow).text().trim().replace(",", ""))
+      let inc = freshData.cases - lastDayCases
+      freshData.inc = inc
+      freshData.dec = parseInt($(dataSelectors.dec, currentRow).text().trim().replace(",", ""))
+      freshData.rec = parseInt($(dataSelectors.rec, currentRow).text().trim().replace(",", ""))
       data[country].cases = freshData.cases
       if (isNaN(freshData.cases)) {freshData.cases = 0}
-      if (isNaN(freshData.deceased)) {freshData.deceased = 0}
-      if (isNaN(freshData.recovered)) {freshData.recovered = 0}
-      ++countryCount
+      if (isNaN(freshData.dec)) {freshData.dec = 0}
+      if (isNaN(freshData.rec)) {freshData.rec = 0}
+
+      dataLatest[country] = {}
+      dataLatest[country].cases = freshData.cases
+      dataLatest[country].inc = freshData.inc      
+      dataLatest[country].dec = freshData.dec
+      dataLatest[country].rec = freshData.rec
+      dataLatest[country].pop = data[country].pop
+      dataLatest[country].area = data[country].area     
+
+      if (++countryCount<11) {
+        dataTop10[country] = data[country]
+      }
     }
   })
   logFn(countryCount)  
   logFn('EOF', 'covid.log')
   fs.writeFile('_data.json', JSON.stringify(data), function () {
     console.log('_data.json updated! Countrycount: ' +countryCount)
-    splitData(data);
+    splitData(data);    
   })
-
+  fs.writeFile('./_data/_dataLatest.json', JSON.stringify(dataLatest), function () {
+    console.log('_dataLatest.json updated! Countrycount: ' +countryCount)
+  })
+  fs.writeFile('./_data/_dataTop10.json', JSON.stringify(dataTop10), function () {
+    console.log('_dataTop10.json updated! Countrycount: ' +countryCount)   
+  })      
 }
+
 
 /*
 var srcData = JSON.parse(fs.readFileSync('_data.json', 'utf8'));
@@ -98,6 +122,7 @@ var srcData = JSON.parse(fs.readFileSync('_data.json', 'utf8'));
 splitData(srcData)
  */
 
-//deleteWhen('Thu Mar 19 2020 11:54:28 GMT+0100 (GMT+01:00)')
+//deleteWhen('Tue Mar 24 2020 23:49:27 GMT+0100 (GMT+01:00)')
+
 
 covid(log)
