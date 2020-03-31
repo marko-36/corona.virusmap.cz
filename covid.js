@@ -33,7 +33,9 @@ function splitData(srcData) {//split data.json to country files
   for (let country of Object.keys(srcData)) {
     let countryShortName = country.replace(/ /g,"_").replace(/\./g,"_").toLowerCase()
     let cases = srcData[country].cases
-    fs.writeFileSync('./_data/' + countryShortName + '.json', JSON.stringify(srcData[country]), function () {})
+    let countryData = {}
+    countryData[countryShortName] = srcData[country]
+    fs.writeFileSync('./_data/' + countryShortName + '.json', JSON.stringify(countryData), function () {})
     countryList[country+' ('+ cases +')'] = countryShortName;
     ++countryCount
   }
@@ -79,12 +81,15 @@ async function covid(logFn) {
       if (isNaN(freshData.rec)) {freshData.rec = 0}
 
       dataLatest[country] = {}
-      dataLatest[country].cases = freshData.cases
-      dataLatest[country].inc = freshData.inc      
-      dataLatest[country].dec = freshData.dec
-      dataLatest[country].rec = freshData.rec
+      dataLatest[country].data = {}
+      dataLatest[country].data[now] = {}
       dataLatest[country].pop = data[country].pop
-      dataLatest[country].area = data[country].area     
+      dataLatest[country].area = data[country].area
+      dataLatest[country].data[now].cases = freshData.cases
+      dataLatest[country].data[now].inc = freshData.inc      
+      dataLatest[country].data[now].dec = freshData.dec
+      dataLatest[country].data[now].rec = freshData.rec
+   
 
       if (++countryCount<11) {
         dataTop10[country] = data[country]
