@@ -4,7 +4,9 @@
   "description": "Coronavirus (COVID-19) global stats over time. JSON data.",
   "main": "covid.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "snyk-protect": "snyk protect",
+    "prepare": "npm run snyk-protect"
   },
   "repository": {
     "type": "git",
@@ -27,6 +29,8 @@
   "homepage": "https://github.com/marko-36/corona.virusmap.cz#readme",
   "dependencies": {
     "cheerio": "^1.0.0-rc.3",
-    "puppeteer": "^2.1.1"
-  }
+    "puppeteer": "^2.1.1",
+    "snyk": "^1.316.1"
+  },
+  "snyk": true
 }
