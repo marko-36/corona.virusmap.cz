@@ -27,6 +27,6 @@
   "homepage": "https://github.com/marko-36/corona.virusmap.cz#readme",
   "dependencies": {
     "cheerio": "^1.0.0-rc.3",
-    "puppeteer": "^2.1.1"
+    "puppeteer": "^21.3.7"
   }
 }
